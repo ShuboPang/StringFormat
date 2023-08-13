@@ -1,4 +1,4 @@
-﻿// StrringFormat.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
+// StrringFormat.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
 //
 
 #include <iostream>
@@ -9,6 +9,8 @@
 std::string format = "qwert%dqwert%drree%fyy%d";
 typedef std::vector<std::any> PARAM_LIST;
 
+#define PARAM_IN 
+#define PARAM_OUT 
 
 /// <summary>
 /// 格式化输入字符串  
@@ -17,7 +19,7 @@ typedef std::vector<std::any> PARAM_LIST;
 /// <param name="format">字符串格式</param>
 /// <param name="param">格式化后的参数</param>
 /// <returns>是否正常格式化</returns>
-bool StringFormatInput(const std::string& input,const std::string& format , PARAM_LIST* param) {
+bool StringFormatInput(PARAM_IN const std::string& input, PARAM_IN const std::string& format ,PARAM_OUT PARAM_LIST* param) {
 	 bool error = false;
 	 int input_index = 0;
 	 int format_index = 0;
@@ -108,10 +110,52 @@ bool StringFormatInput(const std::string& input,const std::string& format , PARA
 	 return true;
 }
 
+/// <summary>
+/// 格式化输出字符串
+/// </summary>
+/// <param name="format"></param>
+/// <param name="param"></param>
+/// <returns></returns>
+bool StringFormatOutput(PARAM_OUT std::string& output, PARAM_IN const std::string& format, PARAM_IN const PARAM_LIST& param) {
+	int index = 0;	//< format 的当前索引
+	int param_index = 0; //< param 的当前索引
+	bool error = false;
+	while (index < format.size() && param_index < param.size()) {
+		if (format.at(index) != '%') {
+			output += format.at(index);
+			index++;
+			continue;
+		}
+		index++;
+		if (format.at(index) == 'd') {
+			if (param[param_index].type() != typeid(int)) {
+				return false;
+			}
+			output += std::to_string(std::any_cast<int>(param.at(param_index)));
+		}
+		else if (format.at(index) == 'f') {
+			if (param[param_index].type() != typeid(float)) {
+				return false;
+			}
+			output += std::to_string(std::any_cast<float>(param.at(param_index)));
+		}
+		else {
+			return false;
+		}
+		index++;
+		param_index++;
+	}
+	if (param_index != param.size() || index != format.size()) {
+		return false;
+	}
+	return true;
+}
+
 int main()
 {
 	PARAM_LIST param;
-	bool ret = StringFormatInput("qwert1231qwert4321rree145.678yy-987", format, &param);
+	std::string input = "qwert1231qwert4321rree145.678yy-987";
+	bool ret = StringFormatInput(input, format, &param);
 
 	for(int i =0;i< param.size();i++){
 		if (param[i].type() == typeid(int)) {
@@ -120,9 +164,12 @@ int main()
 		else if (param[i].type() == typeid(float)) {
 			std::cout << " param[" << i << "] = " << std::any_cast<float>(param[i]) << std::endl;
 		}
-		
 	}
-    std::cout << "Hello World!\n";
+	std::string output;
+	StringFormatOutput(output, format, param);
+
+    std::cout << output <<std::endl;
+	std::cout << input << std::endl;
 }
 
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
